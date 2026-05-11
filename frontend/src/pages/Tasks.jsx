@@ -8,6 +8,8 @@ function Tasks() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [project, setProject] = useState("");
+  const [priority, setPriority] = useState("Medium");
+  const [search, setSearch] = useState("");
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
@@ -56,6 +58,7 @@ function Tasks() {
           title,
           description,
           project,
+          priority,
         },
         {
           headers: {
@@ -67,6 +70,7 @@ function Tasks() {
       setTitle("");
       setDescription("");
       setProject("");
+      setPriority("Medium");
 
       fetchTasks();
 
@@ -111,7 +115,7 @@ function Tasks() {
     <div className="min-h-screen flex bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-blue-700 text-white p-6 hidden md:block">
-        <h2 className="text-3xl font-bold mb-10">TaskManager</h2>
+        <h2 className="text-3xl font-bold mb-10">TaskFlow Manager</h2>
 
         <nav className="space-y-4">
           <Link to="/dashboard" className="block hover:text-gray-200">
@@ -144,6 +148,14 @@ function Tasks() {
             Welcome, {user?.name || "User"}
           </p>
         </div>
+
+         <input
+          type="text"
+          placeholder="Search tasks..."
+          className="w-full mb-6 p-3 border rounded"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
         {/* Task Form */}
         <form
@@ -183,6 +195,17 @@ function Tasks() {
             ))}
           </select>
 
+          <select
+            className="w-full mb-4 p-3 border rounded"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+          >
+            <option value="Low">Low Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="High">High Priority</option>
+          </select>
+
+
           <button
             type="submit"
             className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700"
@@ -194,7 +217,11 @@ function Tasks() {
         {/* Task Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {tasks.length > 0 ? (
-            tasks.map((task) => (
+            tasks
+            .filter((task) =>
+              task.title.toLowerCase().includes(search.toLowerCase())
+            )
+            .map((task) => (
               <div
                 key={task._id}
                 className={`bg-white p-6 rounded-lg shadow ${
@@ -210,6 +237,21 @@ function Tasks() {
                 <p className="mt-3">
                   <span className="font-semibold">Project:</span>{" "}
                   {task.project?.title}
+                </p>
+
+                 <p className="mt-2">
+                  <span className="font-semibold">Priority:</span>{" "}
+                  <span
+                    className={`px-2 py-1 rounded text-white ${
+                      task.priority === "High"
+                        ? "bg-red-500"
+                        : task.priority === "Medium"
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                    }`}
+                  >
+                    {task.priority}
+                  </span>
                 </p>
 
                 <p className="mt-2">

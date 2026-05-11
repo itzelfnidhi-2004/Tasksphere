@@ -55,7 +55,7 @@ function Dashboard() {
     <div className="min-h-screen flex bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-blue-700 text-white p-6 hidden md:block">
-        <h2 className="text-3xl font-bold mb-10">TaskManager</h2>
+        <h2 className="text-3xl font-bold mb-10">TaskFlow Manager</h2>
 
         <nav className="space-y-4">
           <Link to="/dashboard" className="block font-bold">

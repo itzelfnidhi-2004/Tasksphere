@@ -17,6 +17,7 @@ const createTask = async (req, res) => {
       dueDate,
       assignedTo,
       project,
+      priority,
     } = req.body;
 
     const existingProject = await Project.findById(project);
@@ -34,6 +35,7 @@ const createTask = async (req, res) => {
       dueDate,
       assignedTo,
       project,
+      priority,
       createdBy: req.user.id,
     });
 
