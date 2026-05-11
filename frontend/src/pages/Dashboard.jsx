@@ -10,6 +10,13 @@ function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
 
+  const storedUser = localStorage.getItem("user");
+
+const user =
+  storedUser && storedUser !== "undefined"
+    ? JSON.parse(storedUser)
+    : { name: "User" };
+
   const fetchDashboardData = async () => {
     try {
       const projectRes = await API.get("/projects", {
