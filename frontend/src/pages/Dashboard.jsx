@@ -3,19 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
 
 function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
-  const navigate = useNavigate();
-
-  const [projects, setProjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
-
+ 
   const storedUser = localStorage.getItem("user");
 
 const user =
   storedUser && storedUser !== "undefined"
     ? JSON.parse(storedUser)
     : { name: "User" };
+    
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   const fetchDashboardData = async () => {
     try {
