@@ -4,15 +4,14 @@ import API from "../services/api";
 
 function Dashboard() {
   const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const user =
+    storedUser && storedUser !== "undefined"
+      ? JSON.parse(storedUser)
+      : null;
 
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
-
-if (!user || !token) {
-  navigate("/");
-  return null;
-}
 
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -31,14 +30,19 @@ if (!user || !token) {
         },
       });
 
-      setProjects(projectRes.data);
-      setTasks(taskRes.data);
+      setProjects(projectRes.data || []);
+      setTasks(taskRes.data || []);
     } catch (error) {
-      console.log(error);
+      console.log("Dashboard fetch failed:", error);
     }
   };
 
   useEffect(() => {
+    if (!user || !token) {
+      navigate("/");
+      return;
+    }
+
     fetchDashboardData();
   }, []);
 
@@ -57,6 +61,10 @@ if (!user || !token) {
     localStorage.clear();
     navigate("/");
   };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-100">
