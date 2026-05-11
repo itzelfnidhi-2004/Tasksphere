@@ -12,6 +12,7 @@ const projectRoutes = require("./routes/projectRoutes");
 const app = express();
 
 app.use(cors());
+
 app.use(express.json());
 
 mongoose

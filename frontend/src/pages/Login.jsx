@@ -25,17 +25,17 @@ function Login() {
 
       localStorage.setItem("token", res.data.token);
 
-if (res.data.user) {
-  localStorage.setItem("user", JSON.stringify(res.data.user));
-} else {
-  localStorage.setItem(
-    "user",
-    JSON.stringify({
-      name: "User",
-      email: formData.email,
-    })
-  );
-}
+      if (res.data.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+      } else {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: "User",
+            email: formData.email,
+          })
+        );
+      }
 
       alert("Login successful");
       navigate("/dashboard");

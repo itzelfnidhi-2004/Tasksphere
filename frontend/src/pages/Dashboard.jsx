@@ -61,6 +61,10 @@ function Dashboard() {
     navigate("/");
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex bg-gray-100">
       {/* Sidebar */}
@@ -172,7 +176,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Footer Section */}
+        {/* Footer */}
         <div className="mt-10 text-center text-gray-500">
           <p>TaskFlow Manager © 2026 | Full Stack Productivity Platform</p>
         </div>
