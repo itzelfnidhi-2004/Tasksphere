@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import Modal from "../components/Modal";
 
 function Projects() {
-  const [projects, setProjects] = useState([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
+
+  const [projects, setProjects] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const [newProject, setNewProject] = useState({
+    title: "",
+    description: "",
+  });
 
   const fetchProjects = async () => {
     try {
@@ -19,13 +24,19 @@ function Projects() {
         },
       });
 
-      setProjects(res.data);
+      setProjects(res.data || []);
     } catch (error) {
-      console.log(error);
+      console.log("Failed to fetch projects:", error);
+      setProjects([]);
     }
   };
 
   useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     fetchProjects();
   }, []);
 
@@ -33,123 +44,238 @@ function Projects() {
     e.preventDefault();
 
     try {
-      await API.post(
-        "/projects",
-        { title, description },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.post("/projects", newProject, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setTitle("");
-      setDescription("");
+      setNewProject({
+        title: "",
+        description: "",
+      });
+
+      setShowForm(false);
 
       fetchProjects();
-
-      alert("Project created successfully");
     } catch (error) {
-      alert(error.response?.data?.message || "Project creation failed");
+      console.log("Project creation failed:", error);
     }
   };
 
+  const filteredProjects = projects.filter((project) =>
+    project.title?.toLowerCase().includes(search.toLowerCase())
+  );
+
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/");
+    navigate("/login");
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
       {/* Sidebar */}
-      <div className="w-64 bg-blue-700 text-white p-6 hidden md:block">
-        <h2 className="text-3xl font-bold mb-10">TaskFlow Manager</h2>
+      <div className="w-72 min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 text-white p-6 hidden md:flex flex-col shadow-2xl">
+        <div className="mb-12">
+          <h2 className="text-4xl font-extrabold tracking-wide">
+            TaskSphere
+          </h2>
 
-        <nav className="space-y-4">
-          <Link to="/dashboard" className="block hover:text-gray-200">
-            Dashboard
-          </Link>
-
-          <Link to="/projects" className="block font-bold">
-            Projects
-          </Link>
-
-          <Link to="/tasks" className="block hover:text-gray-200">
-            Tasks
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="mt-8 bg-red-500 px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </nav>
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 p-8">
-        {/* Header */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h1 className="text-4xl font-bold">Projects</h1>
-          <p className="text-gray-500 mt-2">
-            Welcome, {user?.name || "User"}
+          <p className="text-blue-200 mt-3 text-sm">
+            Premium Productivity Platform
           </p>
         </div>
 
-        {/* Create Project Form */}
-        <form
-          onSubmit={handleCreateProject}
-          className="bg-white p-6 rounded-lg shadow mb-8"
-        >
-          <h2 className="text-2xl font-bold mb-4">Create New Project</h2>
-
-          <input
-            type="text"
-            placeholder="Project Title"
-            className="w-full mb-4 p-3 border rounded"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-
-          <textarea
-            placeholder="Project Description"
-            className="w-full mb-4 p-3 border rounded"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+        <nav className="flex flex-col gap-4 flex-grow">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="text-left px-4 py-3 rounded-xl hover:bg-blue-700 transition"
+          >
+            Dashboard
+          </button>
 
           <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
+            onClick={() => navigate("/projects")}
+            className="text-left px-4 py-3 rounded-xl bg-blue-700 font-semibold"
           >
-            Create Project
+            Projects
           </button>
-        </form>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.length > 0 ? (
-            projects.map((project) => (
+          <button
+            onClick={() => navigate("/tasks")}
+            className="text-left px-4 py-3 rounded-xl hover:bg-blue-700 transition"
+          >
+            Tasks
+          </button>
+        </nav>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 py-3 rounded-xl font-semibold mt-10 transition"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Main */}
+      <div className="flex-1 p-6 md:p-10">
+        {/* Navbar */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md px-8 py-5 flex flex-col lg:flex-row justify-between items-center gap-4 mb-8 border border-slate-200 dark:border-slate-800">
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl outline-none w-full lg:max-w-lg text-slate-900 dark:text-white"
+          />
+
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+            >
+              + New Project
+            </button>
+
+            <div className="hidden md:flex items-center text-slate-700 dark:text-slate-300 font-medium">
+              Projects Hub
+            </div>
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border-l-4 border-blue-500">
+            <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+              Total Projects
+            </h2>
+
+            <p className="text-4xl mt-3 font-extrabold">
+              {projects.length}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border-l-4 border-green-500">
+            <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+              Active Results
+            </h2>
+
+            <p className="text-4xl mt-3 font-extrabold">
+              {filteredProjects.length}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border-l-4 border-purple-500">
+            <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+              Productivity
+            </h2>
+
+            <p className="text-4xl mt-3 font-extrabold">
+              92%
+            </p>
+          </div>
+        </div>
+
+        {/* Modal */}
+        <Modal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title="Create New Premium Project"
+        >
+          <form
+            onSubmit={handleCreateProject}
+            className="grid gap-4"
+          >
+            <input
+              type="text"
+              placeholder="Project Title"
+              value={newProject.title}
+              onChange={(e) =>
+                setNewProject({
+                  ...newProject,
+                  title: e.target.value,
+                })
+              }
+              required
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            />
+
+            <textarea
+              placeholder="Project Description"
+              value={newProject.description}
+              onChange={(e) =>
+                setNewProject({
+                  ...newProject,
+                  description: e.target.value,
+                })
+              }
+              required
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            />
+
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-semibold transition"
+            >
+              Launch Project
+            </button>
+          </form>
+        </Modal>
+
+        {/* Active Projects */}
+        <div className="mb-6 flex justify-between items-center">
+          <h2 className="text-3xl font-bold">
+            Active Projects
+          </h2>
+        </div>
+
+        {filteredProjects.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 p-10 rounded-2xl shadow-md text-center text-slate-500 dark:text-slate-400">
+            No projects found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {filteredProjects.map((project) => (
               <div
                 key={project._id}
-                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition"
+                className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md hover:shadow-2xl transition duration-300 border border-slate-200 dark:border-slate-800"
               >
-                <h2 className="text-2xl font-bold">{project.title}</h2>
+                <h3 className="text-2xl font-bold mb-3">
+                  {project.title}
+                </h3>
 
-                <p className="text-gray-600 mt-3">
-                  {project.description || "No description provided."}
+                <p className="text-slate-600 dark:text-slate-300 mb-5 min-h-[70px]">
+                  {project.description}
                 </p>
 
-                <p className="mt-4 text-sm text-gray-400">
-                  Created by: {project.createdBy?.name || "Admin"}
-                </p>
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400 mb-2">
+                    <span>Progress</span>
+                    <span>75%</span>
+                  </div>
+
+                  <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full w-3/4"></div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-blue-600 font-medium">
+                    ID: {project._id?.slice(-6)}
+                  </span>
+
+                  <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-1 rounded-full">
+                    Active
+                  </span>
+                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No projects available.</p>
-          )}
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-12 text-center text-sm text-slate-500 dark:text-slate-400">
+          TaskSphere © 2026 | Premium Full-Stack Productivity Platform
         </div>
       </div>
     </div>

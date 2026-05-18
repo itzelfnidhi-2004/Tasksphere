@@ -1,286 +1,379 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import Modal from "../components/Modal";
 
 function Tasks() {
-  const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [project, setProject] = useState("");
-  const [priority, setPriority] = useState("Medium");
-  const [search, setSearch] = useState("");
-
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
-  const fetchTasks = async () => {
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [showForm, setShowForm] = useState(false);
+
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    dueDate: "",
+    projectId: "",
+  });
+
+  const fetchData = async () => {
     try {
-      const res = await API.get("/tasks", {
+      const taskRes = await API.get("/tasks", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setTasks(res.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const res = await API.get("/projects", {
+      const projectRes = await API.get("/projects", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setProjects(res.data);
+      setTasks(taskRes.data || []);
+      setProjects(projectRes.data || []);
     } catch (error) {
-      console.log(error);
+      console.log("Failed to fetch tasks:", error);
+      setTasks([]);
+      setProjects([]);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-    fetchProjects();
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    fetchData();
   }, []);
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
 
     try {
-      await API.post(
-        "/tasks",
-        {
-          title,
-          description,
-          project,
-          priority,
+      await API.post("/tasks", newTask, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      });
 
-      setTitle("");
-      setDescription("");
-      setProject("");
-      setPriority("Medium");
+      setNewTask({
+        title: "",
+        description: "",
+        priority: "Medium",
+        dueDate: "",
+        projectId: "",
+      });
 
-      fetchTasks();
+      setShowForm(false);
 
-      alert("Task created successfully");
+      fetchData();
     } catch (error) {
-      alert(error.response?.data?.message || "Task creation failed");
-    }
-  };
-
-  const handleStatusUpdate = async (taskId, status) => {
-    try {
-      await API.put(
-        `/tasks/${taskId}`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      fetchTasks();
-    } catch (error) {
-      console.log(error);
+      console.log("Task creation failed:", error);
     }
   };
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/");
+    navigate("/login");
   };
 
-  const isOverdue = (task) => {
-    return (
-      task.dueDate &&
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch = task.title
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || task.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const completedTasks = tasks.filter(
+    (task) => task?.status === "Done"
+  ).length;
+
+  const pendingTasks = tasks.filter(
+    (task) => task?.status !== "Done"
+  ).length;
+
+  const overdueTasks = tasks.filter(
+    (task) =>
+      task?.dueDate &&
       new Date(task.dueDate) < new Date() &&
-      task.status !== "Done"
-    );
-  };
+      task?.status !== "Done"
+  ).length;
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
       {/* Sidebar */}
-      <div className="w-64 bg-blue-700 text-white p-6 hidden md:block">
-        <h2 className="text-3xl font-bold mb-10">TaskFlow Manager</h2>
+      <div className="w-72 min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 text-white p-6 hidden lg:flex flex-col shadow-2xl">
+        <div className="mb-14">
+          <h2 className="text-4xl font-extrabold tracking-tight">
+            TaskSphere
+          </h2>
 
-        <nav className="space-y-4">
-          <Link to="/dashboard" className="block hover:text-gray-200">
-            Dashboard
-          </Link>
-
-          <Link to="/projects" className="block hover:text-gray-200">
-            Projects
-          </Link>
-
-          <Link to="/tasks" className="block font-bold">
-            Tasks
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="mt-8 bg-red-500 px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </nav>
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 p-8">
-        {/* Header */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h1 className="text-4xl font-bold">Tasks</h1>
-          <p className="text-gray-500 mt-2">
-            Welcome, {user?.name || "User"}
+          <p className="text-blue-300 mt-2 text-sm">
+            Premium Productivity Platform
           </p>
         </div>
 
-         <input
-          type="text"
-          placeholder="Search tasks..."
-          className="w-full mb-6 p-3 border rounded"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* Task Form */}
-        <form
-          onSubmit={handleCreateTask}
-          className="bg-white p-6 rounded-lg shadow mb-8"
-        >
-          <h2 className="text-2xl font-bold mb-4">Create New Task</h2>
-
-          <input
-            type="text"
-            placeholder="Task Title"
-            className="w-full mb-4 p-3 border rounded"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-
-          <textarea
-            placeholder="Task Description"
-            className="w-full mb-4 p-3 border rounded"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-
-          <select
-            className="w-full mb-4 p-3 border rounded"
-            value={project}
-            onChange={(e) => setProject(e.target.value)}
-            required
+        <nav className="flex flex-col gap-3 flex-grow">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition"
           >
-            <option value="">Select Project</option>
-
-            {projects.map((proj) => (
-              <option key={proj._id} value={proj._id}>
-                {proj.title}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="w-full mb-4 p-3 border rounded"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-          >
-            <option value="Low">Low Priority</option>
-            <option value="Medium">Medium Priority</option>
-            <option value="High">High Priority</option>
-          </select>
-
+            Dashboard
+          </button>
 
           <button
-            type="submit"
-            className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700"
+            onClick={() => navigate("/projects")}
+            className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition"
           >
-            Create Task
+            Projects
           </button>
-        </form>
 
-        {/* Task Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tasks.length > 0 ? (
-            tasks
-            .filter((task) =>
-              task.title.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((task) => (
-              <div
-                key={task._id}
-                className={`bg-white p-6 rounded-lg shadow ${
-                  isOverdue(task) ? "border-l-4 border-red-500" : ""
+          <button
+            onClick={() => navigate("/tasks")}
+            className="text-left px-5 py-3 rounded-2xl bg-blue-700 font-semibold"
+          >
+            Tasks
+          </button>
+        </nav>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 py-3 rounded-2xl font-semibold mt-8 transition"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Main */}
+      <div className="flex-1 p-6 lg:p-10">
+        {/* Top Navbar */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm px-8 py-5 flex flex-col xl:flex-row justify-between items-center gap-4 mb-8 border border-slate-200 dark:border-slate-800">
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-slate-100 dark:bg-slate-800 px-5 py-3 rounded-2xl outline-none w-full xl:max-w-xl text-slate-900 dark:text-white"
+          />
+
+          <div className="flex gap-4 flex-wrap">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            >
+              <option>All</option>
+              <option>To Do</option>
+              <option>In Progress</option>
+              <option>Done</option>
+            </select>
+
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-semibold transition"
+            >
+              + New Task
+            </button>
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+          {[
+            {
+              label: "Total Tasks",
+              value: tasks.length,
+            },
+            {
+              label: "Completed",
+              value: completedTasks,
+              color: "text-green-500",
+            },
+            {
+              label: "Pending",
+              value: pendingTasks,
+              color: "text-yellow-500",
+            },
+            {
+              label: "Overdue",
+              value: overdueTasks,
+              color: "text-red-500",
+            },
+          ].map((card, index) => (
+            <div
+              key={index}
+              className="bg-white dark:bg-slate-900 p-7 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800"
+            >
+              <p className="text-slate-500 dark:text-slate-400 font-medium">
+                {card.label}
+              </p>
+
+              <h2
+                className={`text-4xl font-extrabold mt-3 ${
+                  card.color || ""
                 }`}
               >
-                <h2 className="text-2xl font-bold">{task.title}</h2>
+                {card.value}
+              </h2>
+            </div>
+          ))}
+        </div>
 
-                <p className="text-gray-600 mt-2">
-                  {task.description || "No description"}
+        {/* Modal */}
+        <Modal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title="Create New Premium Task"
+        >
+          <form
+            onSubmit={handleCreateTask}
+            className="grid gap-4"
+          >
+            <input
+              type="text"
+              placeholder="Task Title"
+              value={newTask.title}
+              onChange={(e) =>
+                setNewTask({
+                  ...newTask,
+                  title: e.target.value,
+                })
+              }
+              required
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            />
+
+            <textarea
+              placeholder="Task Description"
+              value={newTask.description}
+              onChange={(e) =>
+                setNewTask({
+                  ...newTask,
+                  description: e.target.value,
+                })
+              }
+              required
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            />
+
+            <select
+              value={newTask.priority}
+              onChange={(e) =>
+                setNewTask({
+                  ...newTask,
+                  priority: e.target.value,
+                })
+              }
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            >
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+
+            <input
+              type="date"
+              value={newTask.dueDate}
+              onChange={(e) =>
+                setNewTask({
+                  ...newTask,
+                  dueDate: e.target.value,
+                })
+              }
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            />
+
+            <select
+              value={newTask.projectId}
+              onChange={(e) =>
+                setNewTask({
+                  ...newTask,
+                  projectId: e.target.value,
+                })
+              }
+              required
+              className="bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-2xl outline-none text-slate-900 dark:text-white"
+            >
+              <option value="">Select Project</option>
+
+              {projects.map((project) => (
+                <option
+                  key={project._id}
+                  value={project._id}
+                >
+                  {project.title}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-semibold transition"
+            >
+              Launch Task
+            </button>
+          </form>
+        </Modal>
+
+        {/* Tasks Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {filteredTasks.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 p-10 rounded-3xl shadow-sm text-center text-slate-500 dark:text-slate-400 col-span-full">
+              No tasks found.
+            </div>
+          ) : (
+            filteredTasks.map((task) => (
+              <div
+                key={task._id}
+                className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl transition"
+              >
+                <h3 className="text-2xl font-bold mb-3">
+                  {task.title}
+                </h3>
+
+                <p className="text-slate-600 dark:text-slate-300 mb-5 min-h-[70px]">
+                  {task.description}
                 </p>
 
-                <p className="mt-3">
-                  <span className="font-semibold">Project:</span>{" "}
-                  {task.project?.title}
-                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-sm">
+                    {task.status || "To Do"}
+                  </span>
 
-                 <p className="mt-2">
-                  <span className="font-semibold">Priority:</span>{" "}
-                  <span
-                    className={`px-2 py-1 rounded text-white ${
-                      task.priority === "High"
-                        ? "bg-red-500"
-                        : task.priority === "Medium"
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                    }`}
-                  >
+                  <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-sm">
                     {task.priority}
                   </span>
-                </p>
+                </div>
 
-                <p className="mt-2">
-                  <span className="font-semibold">Status:</span>{" "}
-                  {task.status}
-                </p>
+                <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                  Due:{" "}
+                  {task.dueDate
+                    ? new Date(task.dueDate).toLocaleDateString()
+                    : "No deadline"}
+                </div>
 
-                {isOverdue(task) && (
-                  <p className="text-red-500 font-bold mt-2">
-                    Overdue
-                  </p>
-                )}
-
-                <select
-                  className="mt-4 p-2 border rounded"
-                  value={task.status}
-                  onChange={(e) =>
-                    handleStatusUpdate(task._id, e.target.value)
-                  }
-                >
-                  <option value="Todo">Todo</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Done">Done</option>
-                </select>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-4">
+                  <div className="bg-blue-600 h-2 rounded-full w-2/3"></div>
+                </div>
               </div>
             ))
-          ) : (
-            <p>No tasks available.</p>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-12">
+          TaskSphere © 2026 | Premium Full-Stack Productivity Ecosystem
         </div>
       </div>
     </div>

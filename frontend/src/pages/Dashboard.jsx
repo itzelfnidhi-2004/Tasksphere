@@ -41,7 +41,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (!token) {
-      navigate("/");
+      navigate("/login");
       return;
     }
 
@@ -50,6 +50,10 @@ function Dashboard() {
 
   const completedTasks = tasks.filter(
     (task) => task?.status === "Done"
+  ).length;
+
+  const pendingTasks = tasks.filter(
+    (task) => task?.status !== "Done"
   ).length;
 
   const overdueTasks = tasks.filter(
@@ -61,157 +65,241 @@ function Dashboard() {
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/");
+    navigate("/login");
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
       {/* Sidebar */}
-      <div className="w-72 min-h-screen bg-gradient-to-b from-blue-800 to-blue-950 text-white p-6 hidden md:flex flex-col">
-        <div className="mb-12">
-          <h2 className="text-4xl font-extrabold tracking-wide">
+      <div className="w-72 min-h-screen bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 text-white p-6 hidden lg:flex flex-col shadow-2xl">
+        <div className="mb-14">
+          <h2 className="text-4xl font-extrabold tracking-tight">
             TaskSphere
           </h2>
 
-          <p className="text-blue-200 mt-3 text-sm">
-            Organize. Collaborate. Scale.
+          <p className="text-blue-300 mt-2 text-sm">
+            Premium Productivity Platform
           </p>
         </div>
 
-        <nav className="flex flex-col gap-4 flex-grow">
+        <nav className="flex flex-col gap-3 flex-grow">
           <button
             onClick={() => navigate("/dashboard")}
-            className="text-left px-4 py-3 rounded-xl hover:bg-blue-700 transition"
+            className="text-left px-5 py-3 rounded-2xl bg-blue-700 font-semibold"
           >
             Dashboard
           </button>
 
           <button
             onClick={() => navigate("/projects")}
-            className="text-left px-4 py-3 rounded-xl hover:bg-blue-700 transition"
+            className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition"
           >
             Projects
           </button>
 
           <button
             onClick={() => navigate("/tasks")}
-            className="text-left px-4 py-3 rounded-xl hover:bg-blue-700 transition"
+            className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition"
           >
             Tasks
+          </button>
+
+          <button className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition">
+            Teams
+          </button>
+
+          <button className="text-left px-5 py-3 rounded-2xl hover:bg-slate-800 transition">
+            Settings
           </button>
         </nav>
 
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 py-3 rounded-xl font-semibold mt-10 transition"
+          className="bg-red-500 hover:bg-red-600 py-3 rounded-2xl font-semibold mt-8 transition"
         >
           Logout
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 md:p-10">
+      {/* Main */}
+      <div className="flex-1 p-6 lg:p-10">
         {/* Navbar */}
-        <div className="bg-white rounded-2xl shadow-md px-8 py-5 flex justify-between items-center mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm px-8 py-5 flex flex-col xl:flex-row justify-between items-center gap-4 mb-8 border border-slate-200 dark:border-slate-800">
           <input
             type="text"
-            placeholder="Search projects, tasks..."
-            className="bg-gray-100 px-4 py-3 rounded-xl outline-none w-full max-w-xl"
+            placeholder="Search tasks, projects, analytics..."
+            className="bg-slate-100 dark:bg-slate-800 px-5 py-3 rounded-2xl outline-none w-full xl:max-w-xl text-slate-900 dark:text-white"
           />
 
-          <div className="hidden md:block text-gray-700 font-medium">
-            Productivity Hub
-          </div>
-        </div>
-
-        {/* Welcome Section */}
-        <div className="bg-white rounded-2xl shadow-md p-8 mb-10">
-          <h1 className="text-4xl font-extrabold text-gray-900">
-            Welcome, {user?.name || "User"}
-          </h1>
-
-          <p className="text-gray-500 mt-3 text-lg">
-            Manage your projects, tasks, and productivity with TaskSphere.
-          </p>
-
-          <p className="text-sm text-blue-600 mt-2 font-medium">
-            Scalable Full-Stack Productivity Platform
-          </p>
-        </div>
-
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-blue-500">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Projects
-            </h2>
-
-            <p className="text-4xl mt-3 font-extrabold text-gray-900">
-              {projects.length}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-yellow-500">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Tasks
-            </h2>
-
-            <p className="text-4xl mt-3 font-extrabold text-gray-900">
-              {tasks.length}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-green-500">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Completed
-            </h2>
-
-            <p className="text-4xl mt-3 font-extrabold text-gray-900">
-              {completedTasks}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-red-500">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Overdue
-            </h2>
-
-            <p className="text-4xl mt-3 font-extrabold text-gray-900">
-              {overdueTasks}
-            </p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mt-10 bg-white rounded-2xl shadow-md p-8">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">
-            Quick Actions
-          </h2>
-
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={() => navigate("/projects")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition"
-            >
-              Manage Projects
+          <div className="flex items-center gap-6">
+            <button className="bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+              Notifications
             </button>
 
-            <button
-              onClick={() => navigate("/tasks")}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+            <div className="bg-blue-600 text-white px-5 py-2 rounded-2xl font-semibold">
+              {user?.name || "User"}
+            </div>
+          </div>
+        </div>
+
+        {/* Hero */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+          <div className="xl:col-span-2 bg-gradient-to-r from-blue-700 to-indigo-700 text-white rounded-3xl p-10 shadow-xl">
+            <h1 className="text-4xl font-extrabold leading-tight">
+              Welcome back, {user?.name || "User"}
+            </h1>
+
+            <p className="mt-4 text-blue-100 text-lg">
+              Here’s your productivity ecosystem overview for today.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-4">
+              <button
+                onClick={() => navigate("/projects")}
+                className="bg-white text-blue-700 px-6 py-3 rounded-2xl font-bold hover:bg-slate-100 transition"
+              >
+                Manage Projects
+              </button>
+
+              <button
+                onClick={() => navigate("/tasks")}
+                className="bg-blue-900 px-6 py-3 rounded-2xl font-bold hover:bg-blue-950 transition"
+              >
+                View Tasks
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm p-8 border border-slate-200 dark:border-slate-800">
+            <h2 className="text-xl font-bold mb-4">
+              Productivity Score
+            </h2>
+
+            <div className="text-6xl font-extrabold text-blue-600">
+              94%
+            </div>
+
+            <p className="mt-4 text-slate-500 dark:text-slate-400">
+              Excellent performance this week.
+            </p>
+          </div>
+        </div>
+
+        {/* KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+          {[
+            {
+              label: "Total Projects",
+              value: projects.length,
+            },
+            {
+              label: "Total Tasks",
+              value: tasks.length,
+            },
+            {
+              label: "Completed",
+              value: completedTasks,
+              color: "text-green-500",
+            },
+            {
+              label: "Overdue",
+              value: overdueTasks,
+              color: "text-red-500",
+            },
+          ].map((card, index) => (
+            <div
+              key={index}
+              className="bg-white dark:bg-slate-900 p-7 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800"
             >
-              Manage Tasks
-            </button>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">
+                {card.label}
+              </p>
+
+              <h2
+                className={`text-4xl font-extrabold mt-3 ${
+                  card.color || ""
+                }`}
+              >
+                {card.value}
+              </h2>
+            </div>
+          ))}
+        </div>
+
+        {/* Progress + Insights */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+          <div className="xl:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm p-8 border border-slate-200 dark:border-slate-800">
+            <h2 className="text-2xl font-bold mb-6">
+              Task Completion Overview
+            </h2>
+
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Completed Tasks</span>
+                  <span>{completedTasks}</span>
+                </div>
+
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3">
+                  <div
+                    className="bg-green-500 h-3 rounded-full"
+                    style={{
+                      width: `${
+                        tasks.length
+                          ? (completedTasks / tasks.length) * 100
+                          : 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Pending Tasks</span>
+                  <span>{pendingTasks}</span>
+                </div>
+
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3">
+                  <div
+                    className="bg-yellow-400 h-3 rounded-full"
+                    style={{
+                      width: `${
+                        tasks.length
+                          ? (pendingTasks / tasks.length) * 100
+                          : 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm p-8 border border-slate-200 dark:border-slate-800">
+            <h2 className="text-2xl font-bold mb-6">
+              Insights
+            </h2>
+
+            <div className="space-y-5 text-slate-600 dark:text-slate-300">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                {projects.length} active projects running.
+              </div>
+
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                {pendingTasks} tasks need attention.
+              </div>
+
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                {overdueTasks} deadlines overdue.
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-500">
-          TaskSphere © 2026 | Scalable Full-Stack Productivity Platform
+        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mt-12">
+          TaskSphere © 2026 | Premium Full-Stack Productivity Ecosystem
         </div>
       </div>
     </div>
